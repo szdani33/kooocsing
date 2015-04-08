@@ -5,8 +5,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class Scanner extends Thread {
-
-	private boolean run = true;
 	private Controller controller;
 	
 	public Scanner(Controller controller) {
@@ -15,7 +13,7 @@ public class Scanner extends Thread {
 	
 	@Override
 	public void run() {
-		while(run) {
+		while(true) {
 			HostAndPort hap = controller.getNextHostAndPort();
 			if(hap != null) {
 				try {
@@ -28,7 +26,7 @@ public class Scanner extends Thread {
 					controller.addToClosed(hap.getHost());
 				}
 			} else {
-				run = false;
+				break;
 			}
 		}
 		controller.scannerFinished(this);

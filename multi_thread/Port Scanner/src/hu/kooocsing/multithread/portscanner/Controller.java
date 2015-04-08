@@ -7,16 +7,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class Controller {
-
 	private List<HostAndPort> toCheck;
 	private List<Scanner> scanners;
-	private Map<String, Integer> open = new HashMap<String, Integer>();
-	private Map<String, Integer> closed = new HashMap<String, Integer>();
-	
+	private Map<String, Integer> open = new HashMap<String, Integer>(); // AtomicInt
+	private Map<String, Integer> closed = new HashMap<String, Integer>(); // ConcurrentHashMap
+	private final int numberOfThreads;
 	
 	public Controller(int numberOfThreads, String... hosts) {
+		this.numberOfThreads = numberOfThreads;
 		initializeHostAndPorts(hosts);
-		startScanners(numberOfThreads);
 	}
 
 	private void initializeHostAndPorts(String... hosts) {
@@ -30,15 +29,26 @@ public class Controller {
 		}
 	} 
 
-	private void startScanners(int numberOfThreads) {
+	public void startScanners() {
 		scanners = new ArrayList<Scanner>();
 		for(int i = 0; i < numberOfThreads; i++) {
 			Scanner scanner = new Scanner(this);
 			scanners.add(scanner);
 			scanner.start();
 		}
+		
+		for (Scanner scanner : scanners) {
+			try {
+				scanner.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				
+				Thread.currentThread().interrupt();
+			}
+		}
 	}
 	
+	// !!!
 	public synchronized HostAndPort getNextHostAndPort() {
 		if(!toCheck.isEmpty()) {
 			return toCheck.remove(0);
